@@ -47,7 +47,6 @@ def init_db():
                 created_at TEXT NOT NULL
             )
         ''')
-        # Seed realistic demo data if empty so app looks alive immediately
         count = conn.execute("SELECT COUNT(*) FROM donations").fetchone()[0]
         if count == 0:
             now = datetime.now()
@@ -71,7 +70,6 @@ def init_db():
 def index():
     return render_template('index.html')
 
-# --- Auth Routes ---
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
@@ -107,7 +105,6 @@ def logout():
 def current_user():
     return jsonify({"user": session.get('user')})
 
-# --- Core App Routes ---
 @app.route('/api/dashboard', methods=['GET'])
 def get_dashboard():
     with get_db() as conn:
@@ -116,10 +113,9 @@ def get_dashboard():
 
         total_meals = sum(d['meals_count'] for d in donations)
         rescued_meals = sum(d['meals_count'] for d in donations if d['status'] in ('Claimed', 'Delivered'))
-        co2_saved = round(rescued_meals * 2.5, 1)  # ~2.5 kg CO2 saved per rescued meal
+        co2_saved = round(rescued_meals * 2.5, 1)
         active_pickups = sum(1 for d in donations if d['status'] == 'Available')
 
-        # Leaderboard aggregation
         leaderboard_rows = conn.execute('''
             SELECT donor_name, SUM(meals_count) as total_meals, COUNT(id) as donations_count
             FROM donations GROUP BY donor_name ORDER BY total_meals DESC LIMIT 5
@@ -145,7 +141,6 @@ def create_donation():
     hours = float(data.get('expiry_hours', 4))
     expiry_iso = (datetime.now() + timedelta(hours=hours)).isoformat()
     otp = str(random.randint(1000, 9999))
-    # Slight random offset around default coordinates if user didn't pick custom lat/lng
     lat = float(data.get('lat') or (17.3850 + random.uniform(-0.04, 0.04)))
     lng = float(data.get('lng') or (78.4867 + random.uniform(-0.04, 0.04)))
 
@@ -179,4 +174,24 @@ def verify_delivery(donation_id):
     if not user:
         return jsonify({"error": "Login required."}), 401
     entered_otp = request.json.get('otp', '').strip()
-    with get_db() as
+    with get_db() as conn:
+        row = conn.execute("SELECT pickup_otp FROM donations WHERE id = ?", (donation_id,)).fetchone()
+        if row and row['pickup_otp'] == entered_otp:
+            conn.execute("UPDATE donations SET status = 'Delivered' WHERE id = ?", (donation_id,))
+            return jsonify({"message": "OTP Verified! Food marked as Delivered."})
+    return jsonify({"error": "Invalid 4-digit Pickup OTP. Ask the NGO volunteer."}), 400
+
+@app.route('/api/export/csv')
+def export_csv():
+    with get_db() as conn:
+        rows = conn.execute("SELECT id, donor_name, phone, food_item, category, meals_count, location, status, claimed_by, created_at FROM donations").fetchall()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['ID', 'Donor', 'Phone', 'Food Item', 'Category', 'Meals', 'Location', 'Status', 'Claimed By', 'Posted At'])
+    for r in rows:
+        writer.writerow(list(r))
+    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=food_rescue_report.csv"})
+
+if __name__ == '__main__':
+    init_db()
+    app.run(debug=True)
