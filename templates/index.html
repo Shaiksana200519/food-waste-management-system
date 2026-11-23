@@ -3,307 +3,441 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FoodShare Pro | Shaik Sana</title>
+    <title>FoodShare Enterprise | Shaik Sana</title>
+    <!-- Leaflet Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        :root { --primary: #1b5e20; --accent: #2e7d32; --bg: #f0f4f3; --card: #ffffff; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; color: #333; }
-        header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        header h2 { margin: 0; font-size: 22px; }
-        .container { max-width: 1150px; margin: 25px auto; padding: 0 15px; }
-        
-        /* Stats Grid */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .stat-box { background: var(--card); padding: 20px; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.06); border-left: 5px solid var(--accent); }
-        .stat-box h3 { margin: 0; font-size: 28px; color: var(--primary); }
-        .stat-box p { margin: 5px 0 0; color: #666; font-size: 14px; }
+        :root {
+            --sidebar: #0f291e; --primary: #15803d; --primary-dark: #14532d;
+            --bg: #f3f6f4; --card: #ffffff; --text: #1f2937; --muted: #6b7280;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { margin: 0; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
 
-        /* Cards & Forms */
-        .card { background: var(--card); padding: 22px; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.06); margin-bottom: 25px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; width: 100%; box-sizing: border-box; font-size: 14px; }
-        button { background: var(--accent); color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        button:hover { background: var(--primary); }
-        .btn-warn { background: #ef6c00; }
-        .btn-done { background: #0277bd; }
-        .btn-del { background: #c62828; padding: 6px 10px; font-size: 12px; }
-        .btn-outline { background: transparent; border: 1px solid white; }
+        /* Sidebar Navigation */
+        .sidebar { width: 250px; background: var(--sidebar); color: white; padding: 24px 18px; display: flex; flex-direction: column; justify-content: space-between; position: fixed; height: 100vh; }
+        .brand h2 { margin: 0; font-size: 20px; color: #4ade80; }
+        .brand p { margin: 4px 0 24px; font-size: 12px; color: #9ca3af; }
+        .nav-item { display: block; width: 100%; text-align: left; background: transparent; border: none; color: #d1d5db; padding: 12px 14px; border-radius: 8px; cursor: pointer; font-size: 15px; margin-bottom: 6px; font-weight: 500; }
+        .nav-item:hover, .nav-item.active { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
+        .user-box { background: rgba(255,255,255,0.06); padding: 14px; border-radius: 10px; font-size: 13px; }
 
-        /* Table & Badges */
-        .filter-bar { display: flex; gap: 12px; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        th { background: #e8f5e9; color: #1b5e20; }
-        .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-        .Available { background: #e8f5e9; color: #2e7d32; }
-        .Claimed { background: #fff3e0; color: #ef6c00; }
-        .Delivered { background: #e1f5fe; color: #0277bd; }
-        .hidden { display: none; }
+        /* Main Area */
+        .main { margin-left: 250px; flex: 1; padding: 28px 36px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .topbar h1 { margin: 0; font-size: 24px; }
+        .btn { background: var(--primary); color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s; }
+        .btn:hover { background: var(--primary-dark); }
+        .btn-secondary { background: #e5e7eb; color: #1f2937; }
+        .btn-secondary:hover { background: #d1d5db; }
+        .btn-orange { background: #ea580c; }
+        .btn-blue { background: #0284c7; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        /* KPI Cards */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 18px; margin-bottom: 26px; }
+        .kpi { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); border-top: 4px solid var(--primary); }
+        .kpi h3 { margin: 0; font-size: 30px; color: var(--primary-dark); }
+        .kpi span { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+        /* Cards & Feed */
+        .card { background: var(--card); border-radius: 12px; padding: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); margin-bottom: 24px; }
+        .feed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+        .food-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; background: #fff; display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s; }
+        .food-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.07); transform: translateY(-2px); }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .Available { background: #dcfce7; color: #15803d; }
+        .Claimed { background: #ffedd5; color: #c2410c; }
+        .Delivered { background: #e0f2fe; color: #0369a1; }
+        .timer { font-size: 12px; font-weight: 700; color: #dc2626; background: #fef2f2; padding: 4px 8px; border-radius: 6px; display: inline-block; margin: 8px 0; }
+
+        /* Map & Leaderboard */
+        #rescueMap { height: 420px; border-radius: 12px; z-index: 1; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; border-bottom: 1px solid #f3f4f6; text-align: left; font-size: 14px; }
+        th { color: var(--muted); font-weight: 600; }
+
+        /* Modals & Drawers */
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 999; }
+        .modal { background: white; width: 420px; max-width: 92%; padding: 26px; border-radius: 14px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        input, select { width: 100%; padding: 11px; margin: 8px 0 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+        .hidden { display: none !important; }
+
+        /* Toast Notification */
+        #toast { position: fixed; bottom: 24px; right: 24px; background: #111827; color: white; padding: 14px 22px; border-radius: 10px; font-size: 14px; z-index: 1000; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
-<header>
+<!-- Sidebar -->
+<aside class="sidebar">
     <div>
-        <h2>Food Waste Management System</h2>
-        <small>Developed by Shaik Sana</small>
-    </div>
-    <div id="userBar">
-        <span id="welcomeText">Guest Mode (Login to Donate or Claim)</span>
-        <button id="logoutBtn" class="btn-outline hidden" onclick="logout()">Logout</button>
-    </div>
-</header>
-
-<div class="container">
-
-    <!-- Live Analytics -->
-    <div class="stats-grid">
-        <div class="stat-box"><h3 id="statMeals">0</h3><p>Total Meals Saved</p></div>
-        <div class="stat-box"><h3 id="statTotal">0</h3><p>Total Food Donations</p></div>
-        <div class="stat-box"><h3 id="statAvail">0</h3><p>Available for Pickup</p></div>
-        <div class="stat-box"><h3 id="statRescued">0</h3><p>Claimed / Delivered</p></div>
-    </div>
-
-    <!-- Auth Section (Shown when logged out) -->
-    <div id="authSection" class="grid-2">
-        <div class="card">
-            <h3>Login</h3>
-            <form id="loginForm">
-                <input type="email" id="loginEmail" placeholder="Email Address" required><br><br>
-                <input type="password" id="loginPass" placeholder="Password" required><br><br>
-                <button type="submit">Login</button>
-            </form>
+        <div class="brand">
+            <h2>FoodShare Pro</h2>
+            <p>Built by Shaik Sana</p>
         </div>
-        <div class="card">
-            <h3>Register New Account</h3>
-            <form id="regForm">
-                <div class="form-grid">
-                    <input type="text" id="regName" placeholder="Full Name / Organization" required>
-                    <input type="email" id="regEmail" placeholder="Email Address" required>
-                    <input type="text" id="regPhone" placeholder="Phone Number" required>
-                    <select id="regRole">
-                        <option value="Donor">Food Donor (Restaurant / Event)</option>
-                        <option value="NGO">NGO / Delivery Volunteer</option>
-                    </select>
-                    <input type="password" id="regPass" placeholder="Create Password" required>
-                </div><br>
-                <button type="submit">Create Account</button>
-            </form>
+        <button class="nav-item active" onclick="switchTab('feedTab', this)">Live Rescue Feed</button>
+        <button class="nav-item" onclick="switchTab('mapTab', this)">Live Pickup Map</button>
+        <button class="nav-item" onclick="switchTab('leaderTab', this)">Impact & Leaderboard</button>
+    </div>
+
+    <div class="user-box" id="sidebarUser">
+        <div style="color:#9ca3af; margin-bottom:10px;">Browsing as Guest</div>
+        <button class="btn" style="width:100%;" onclick="openModal('authModal')">Login / Register</button>
+    </div>
+</aside>
+
+<!-- Main Content -->
+<main class="main">
+    <div class="topbar">
+        <div>
+            <h1 id="pageTitle">Live Food Rescue Marketplace</h1>
+            <small style="color:var(--muted);">Real-time surplus food redistribution & OTP-verified logistics</small>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <a href="/api/export/csv" class="btn btn-secondary" style="text-decoration:none;">Export CSV Report</a>
+            <button id="postFoodBtn" class="btn hidden" onclick="openModal('donateModal')">+ Donate Surplus Food</button>
         </div>
     </div>
 
-    <!-- Donor Form (Shown only to logged-in Donors) -->
-    <div id="donorSection" class="card hidden">
-        <h3>Post Surplus Food Donation</h3>
-        <form id="donationForm">
-            <div class="form-grid">
-                <input type="text" id="food_item" placeholder="Food Description (e.g., Veg Biryani)" required>
-                <select id="category">
-                    <option value="Vegetarian">Vegetarian</option>
-                    <option value="Non-Vegetarian">Non-Vegetarian</option>
-                    <option value="Bakery / Packaged">Bakery / Packaged</option>
-                </select>
-                <input type="number" id="meals_count" placeholder="Approx. Number of Meals (e.g., 25)" min="1" required>
-                <input type="text" id="expiry_time" placeholder="Best Before (e.g., Today 10:00 PM)" required>
-                <input type="text" id="location" placeholder="Full Pickup Address & City" required>
-            </div><br>
-            <button type="submit">Publish Donation</button>
-        </form>
+    <!-- KPI Metrics -->
+    <div class="kpi-grid">
+        <div class="kpi"><h3 id="kpiRescued">0</h3><span>Meals Rescued</span></div>
+        <div class="kpi"><h3 id="kpiCo2">0 kg</h3><span>CO₂ Emissions Prevented</span></div>
+        <div class="kpi"><h3 id="kpiActive">0</h3><span>Active Pickups Nearby</span></div>
+        <div class="kpi"><h3 id="kpiTotal">0</h3><span>Total Meals Listed</span></div>
     </div>
 
-    <!-- Food Listings Table -->
-    <div class="card">
-        <h3>Live Food Rescue Feed</h3>
-        <div class="filter-bar">
-            <input type="text" id="searchInput" placeholder="Search by food, donor, or city..." onkeyup="renderTable()">
-            <select id="statusFilter" onchange="renderTable()" style="max-width: 200px;">
-                <option value="ALL">All Statuses</option>
-                <option value="Available">Available Only</option>
-                <option value="Claimed">Claimed Only</option>
-                <option value="Delivered">Delivered Only</option>
+    <!-- TAB 1: Live Rescue Cards -->
+    <section id="feedTab">
+        <div class="card" style="padding:14px 20px; display:flex; gap:12px;">
+            <input type="text" id="searchBox" placeholder="Search dishes, restaurants, or areas..." style="margin:0;" onkeyup="renderFeed()">
+            <select id="filterStatus" style="margin:0; max-width:190px;" onchange="renderFeed()">
+                <option value="ALL">All Listings</option>
+                <option value="Available">Available Now</option>
+                <option value="Claimed">In Transit (Claimed)</option>
+                <option value="Delivered">Delivered</option>
             </select>
         </div>
+        <div class="feed-grid" id="feedContainer"></div>
+    </section>
 
-        <div style="overflow-x:auto;">
+    <!-- TAB 2: Interactive Map -->
+    <section id="mapTab" class="hidden">
+        <div class="card">
+            <h3 style="margin-top:0;">Real-Time Pickup Locations</h3>
+            <p style="color:var(--muted); font-size:13px;">Click any marker to inspect available meals and launch turn-by-turn navigation.</p>
+            <div id="rescueMap"></div>
+        </div>
+    </section>
+
+    <!-- TAB 3: Leaderboard -->
+    <section id="leaderTab" class="hidden">
+        <div class="card">
+            <h3 style="margin-top:0;">Top Community Food Donors</h3>
             <table>
-                <thead>
-                    <tr>
-                        <th>Donor & Contact</th>
-                        <th>Food & Category</th>
-                        <th>Meals</th>
-                        <th>Best Before</th>
-                        <th>Pickup Location</th>
-                        <th>Status / Claimed By</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="donationTable"></tbody>
+                <thead><tr><th>Rank</th><th>Organization / Donor</th><th>Donations Completed</th><th>Total Meals Contributed</th></tr></thead>
+                <tbody id="leaderTable"></tbody>
             </table>
         </div>
+    </section>
+</main>
+
+<!-- Login / Register Modal -->
+<div id="authModal" class="modal-backdrop hidden">
+    <div class="modal">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 id="authTitle" style="margin:0;">Sign In to FoodShare</h3>
+            <button class="btn btn-secondary btn-sm" onclick="closeModal('authModal')">✕</button>
+        </div>
+        <div style="margin:14px 0; display:flex; gap:8px;">
+            <button class="btn btn-sm" id="tabLoginBtn" onclick="toggleAuthMode(true)">Login</button>
+            <button class="btn btn-secondary btn-sm" id="tabRegBtn" onclick="toggleAuthMode(false)">Create Account</button>
+        </div>
+
+        <form id="loginForm">
+            <input type="email" id="lEmail" placeholder="Email Address" required>
+            <input type="password" id="lPass" placeholder="Password" required>
+            <button type="submit" class="btn" style="width:100%;">Login</button>
+        </form>
+
+        <form id="regForm" class="hidden">
+            <input type="text" id="rName" placeholder="Restaurant / NGO / Full Name" required>
+            <input type="email" id="rEmail" placeholder="Email Address" required>
+            <input type="text" id="rPhone" placeholder="Mobile Number (for pickup coordination)" required>
+            <select id="rRole">
+                <option value="Donor">Food Donor (Restaurant / Event / Home)</option>
+                <option value="NGO">NGO / Volunteer Rider</option>
+            </select>
+            <input type="password" id="rPass" placeholder="Create Password" required>
+            <button type="submit" class="btn" style="width:100%;">Register Account</button>
+        </form>
     </div>
 </div>
 
+<!-- Donate Food Modal -->
+<div id="donateModal" class="modal-backdrop hidden">
+    <div class="modal">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;">List Surplus Food</h3>
+            <button class="btn btn-secondary btn-sm" onclick="closeModal('donateModal')">✕</button>
+        </div><br>
+        <form id="donateForm">
+            <input type="text" id="dFood" placeholder="Food Item (e.g., 2 Trays Veg Pulao & Dal)" required>
+            <select id="dCat">
+                <option value="Vegetarian">Pure Vegetarian</option>
+                <option value="Non-Vegetarian">Non-Vegetarian</option>
+                <option value="Bakery / Packaged">Bakery / Sealed Packaged</option>
+            </select>
+            <input type="number" id="dMeals" placeholder="Estimated Meals (e.g., 35)" min="1" required>
+            <select id="dHours">
+                <option value="2">Safe for next 2 Hours (Urgent)</option>
+                <option value="4" selected>Safe for next 4 Hours</option>
+                <option value="8">Safe for next 8 Hours</option>
+                <option value="24">Safe for 24 Hours (Packaged)</option>
+            </select>
+            <input type="text" id="dLoc" placeholder="Pickup Landmark & City" required>
+            <button type="submit" class="btn" style="width:100%;">Publish Live Listing</button>
+        </form>
+    </div>
+</div>
+
+<div id="toast" class="hidden"></div>
+
 <script>
     let currentUser = null;
-    let allDonations = [];
+    let donationsData = [];
+    let map = null;
+    let markersLayer = null;
 
-    async function checkAuth() {
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.classList.remove('hidden');
+        setTimeout(() => t.classList.add('hidden'), 4000);
+    }
+
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function toggleAuthMode(isLogin) {
+        document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
+        document.getElementById('regForm').classList.toggle('hidden', isLogin);
+        document.getElementById('authTitle').innerText = isLogin ? 'Sign In to FoodShare' : 'Register Organization / Volunteer';
+        document.getElementById('tabLoginBtn').className = isLogin ? 'btn btn-sm' : 'btn btn-secondary btn-sm';
+        document.getElementById('tabRegBtn').className = !isLogin ? 'btn btn-sm' : 'btn btn-secondary btn-sm';
+    }
+
+    function switchTab(tabId, btn) {
+        ['feedTab', 'mapTab', 'leaderTab'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        document.getElementById(tabId).classList.remove('hidden');
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (tabId === 'mapTab') {
+            setTimeout(() => { initMap(); }, 100);
+        }
+    }
+
+    async function syncUser() {
         const res = await fetch('/api/me');
         const data = await res.json();
         currentUser = data.user;
+        const box = document.getElementById('sidebarUser');
+        const postBtn = document.getElementById('postFoodBtn');
 
         if (currentUser) {
-            document.getElementById('welcomeText').innerText = `Logged in as: ${currentUser.name} (${currentUser.role})`;
-            document.getElementById('logoutBtn').classList.remove('hidden');
-            document.getElementById('authSection').classList.add('hidden');
-            if (currentUser.role === 'Donor') {
-                document.getElementById('donorSection').classList.remove('hidden');
-            } else {
-                document.getElementById('donorSection').classList.add('hidden');
-            }
+            box.innerHTML = `
+                <div style="font-weight:700; color:#4ade80;">${currentUser.name}</div>
+                <div style="font-size:12px; color:#d1d5db; margin-bottom:10px;">Role: ${currentUser.role}</div>
+                <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="logout()">Sign Out</button>
+            `;
+            postBtn.classList.toggle('hidden', currentUser.role !== 'Donor');
         } else {
-            document.getElementById('welcomeText').innerText = 'Guest Mode (Login to Donate or Claim)';
-            document.getElementById('logoutBtn').classList.add('hidden');
-            document.getElementById('authSection').classList.remove('hidden');
-            document.getElementById('donorSection').classList.add('hidden');
+            box.innerHTML = `
+                <div style="color:#9ca3af; margin-bottom:10px;">Browsing as Guest</div>
+                <button class="btn" style="width:100%;" onclick="openModal('authModal')">Login / Register</button>
+            `;
+            postBtn.classList.add('hidden');
         }
-        loadData();
+        loadDashboard();
     }
 
-    async function loadData() {
-        const res = await fetch('/api/donations');
+    async function loadDashboard() {
+        const res = await fetch('/api/dashboard');
         const data = await res.json();
-        allDonations = data.donations;
+        donationsData = data.donations;
 
-        document.getElementById('statMeals').innerText = data.stats.total_meals;
-        document.getElementById('statTotal').innerText = data.stats.total_listings;
-        document.getElementById('statAvail').innerText = data.stats.available;
-        document.getElementById('statRescued').innerText = data.stats.rescued;
+        document.getElementById('kpiRescued').innerText = data.stats.rescued_meals;
+        document.getElementById('kpiCo2').innerText = data.stats.co2_saved + ' kg';
+        document.getElementById('kpiActive').innerText = data.stats.active_pickups;
+        document.getElementById('kpiTotal').innerText = data.stats.total_meals;
 
-        renderTable();
+        // Leaderboard
+        const lBody = document.getElementById('leaderTable');
+        lBody.innerHTML = data.leaderboard.map((row, idx) => `
+            <tr>
+                <td><strong>#${idx + 1}</strong></td>
+                <td>${row.donor_name}</td>
+                <td>${row.donations_count} pickups</td>
+                <td><strong style="color:#15803d;">${row.total_meals} meals</strong></td>
+            </tr>
+        `).join('');
+
+        renderFeed();
     }
 
-    function renderTable() {
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        const statusFilter = document.getElementById('statusFilter').value;
-        const tbody = document.getElementById('donationTable');
-        tbody.innerHTML = '';
+    function getTimeRemaining(expiryIso) {
+        const diff = new Date(expiryIso) - new Date();
+        if (diff <= 0) return "Expired";
+        const hrs = Math.floor(diff / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        return `${hrs}h ${mins}m left to rescue`;
+    }
 
-        const filtered = allDonations.filter(d => {
-            const matchesText = d.food_item.toLowerCase().includes(search) ||
-                                d.location.toLowerCase().includes(search) ||
-                                d.donor_name.toLowerCase().includes(search);
-            const matchesStatus = statusFilter === 'ALL' || d.status === statusFilter;
-            return matchesText && matchesStatus;
+    function renderFeed() {
+        const q = document.getElementById('searchBox').value.toLowerCase();
+        const st = document.getElementById('filterStatus').value;
+        const container = document.getElementById('feedContainer');
+
+        const filtered = donationsData.filter(d => {
+            const matchQ = d.food_item.toLowerCase().includes(q) || d.location.toLowerCase().includes(q) || d.donor_name.toLowerCase().includes(q);
+            const matchSt = st === 'ALL' || d.status === st;
+            return matchQ && matchSt;
         });
 
-        filtered.forEach(item => {
-            let actionBtn = '-';
+        container.innerHTML = filtered.map(d => {
+            const timeText = d.status === 'Delivered' ? 'Completed' : getTimeRemaining(d.expiry_iso);
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lng}`;
+
+            let actionHtml = `<a href="${mapsUrl}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;">Directions</a>`;
+
             if (currentUser) {
-                if (currentUser.role === 'NGO' && item.status === 'Available') {
-                    actionBtn = `<button class="btn-warn" onclick="updateStatus(${item.id}, 'Claimed')">Claim Pickup</button>`;
-                } else if (currentUser.role === 'NGO' && item.status === 'Claimed') {
-                    actionBtn = `<button class="btn-done" onclick="updateStatus(${item.id}, 'Delivered')">Mark Delivered</button>`;
-                } else if (currentUser.role === 'Donor' && item.donor_id === currentUser.id) {
-                    actionBtn = `<button class="btn-del" onclick="deleteItem(${item.id})">Delete</button>`;
+                if (currentUser.role === 'NGO' && d.status === 'Available') {
+                    actionHtml += ` <button class="btn btn-orange btn-sm" onclick="claimFood(${d.id})">Claim Pickup</button>`;
+                } else if (currentUser.role === 'NGO' && d.status === 'Claimed') {
+                    actionHtml += ` <span style="font-size:12px; font-weight:700; color:#c2410c;">Your OTP: ${d.pickup_otp}</span>`;
+                } else if (currentUser.role === 'Donor' && d.status === 'Claimed') {
+                    actionHtml += ` <button class="btn btn-blue btn-sm" onclick="verifyOtp(${d.id})">Verify Pickup OTP</button>`;
                 }
             }
 
-            tbody.innerHTML += `
-                <tr>
-                    <td><strong>${item.donor_name}</strong><br><small>${item.phone}</small></td>
-                    <td>${item.food_item}<br><small>${item.category}</small></td>
-                    <td><strong>${item.meals_count}</strong></td>
-                    <td>${item.expiry_time}</td>
-                    <td>${item.location}</td>
-                    <td>
-                        <span class="badge ${item.status}">${item.status}</span>
-                        ${item.claimed_by !== '-' ? `<br><small>By: ${item.claimed_by}</small>` : ''}
-                    </td>
-                    <td>${actionBtn}</td>
-                </tr>
+            return `
+                <div class="food-card">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="badge ${d.status}">${d.status}</span>
+                            <small style="color:#6b7280;">${d.category}</small>
+                        </div>
+                        <h3 style="margin:10px 0 4px;">${d.food_item}</h3>
+                        <div style="font-size:13px; color:#374151;"><strong>${d.meals_count} Meals</strong> • By ${d.donor_name}</div>
+                        <div class="timer">⏱ ${timeText}</div>
+                        <div style="font-size:13px; color:#4b5563; margin-top:4px;">📍 ${d.location}</div>
+                        <div style="font-size:12px; color:#6b7280; margin-top:4px;">📞 ${d.phone}</div>
+                        ${d.claimed_by !== '-' ? `<div style="font-size:12px; color:#0369a1; margin-top:6px;">🚚 Claimed by: ${d.claimed_by}</div>` : ''}
+                    </div>
+                    <div style="margin-top:16px; padding-top:12px; border-top:1px solid #f3f4f6; display:flex; justify-content:space-between; align-items:center;">
+                        ${actionHtml}
+                    </div>
+                </div>
             `;
+        }).join('');
+    }
+
+    function initMap() {
+        if (!map) {
+            map = L.map('rescueMap').setView([17.4150, 78.4200], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+            markersLayer = L.layerGroup().addTo(map);
+        }
+        map.invalidateSize();
+        markersLayer.clearLayers();
+
+        donationsData.forEach(d => {
+            const marker = L.marker([d.lat, d.lng]).addTo(markersLayer);
+            marker.bindPopup(`
+                <strong>${d.food_item}</strong> (${d.meals_count} meals)<br>
+                Donor: ${d.donor_name}<br>
+                Status: <b>${d.status}</b><br>
+                <a href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lng}" target="_blank">Open in Google Maps</a>
+            `);
         });
     }
 
-    // Event Listeners
+    // Form Handlers
     document.getElementById('regForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const res = await fetch('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                name: document.getElementById('regName').value,
-                email: document.getElementById('regEmail').value,
-                phone: document.getElementById('regPhone').value,
-                role: document.getElementById('regRole').value,
-                password: document.getElementById('regPass').value
+                name: document.getElementById('rName').value,
+                email: document.getElementById('rEmail').value,
+                phone: document.getElementById('rPhone').value,
+                role: document.getElementById('rRole').value,
+                password: document.getElementById('rPass').value
             })
         });
         const data = await res.json();
-        alert(data.message || data.error);
-        if (res.ok) e.target.reset();
+        showToast(data.message || data.error);
+        if (res.ok) { e.target.reset(); toggleAuthMode(true); }
     });
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const res = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email: document.getElementById('loginEmail').value,
-                password: document.getElementById('loginPass').value
-            })
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: document.getElementById('lEmail').value, password: document.getElementById('lPass').value })
         });
         const data = await res.json();
-        if (res.ok) {
-            e.target.reset();
-            checkAuth();
-        } else {
-            alert(data.error);
-        }
+        if (res.ok) { e.target.reset(); closeModal('authModal'); showToast(`Welcome back, ${data.user.name}!`); syncUser(); }
+        else { showToast(data.error); }
     });
 
     async function logout() {
         await fetch('/api/logout', { method: 'POST' });
-        checkAuth();
+        showToast("Signed out.");
+        syncUser();
     }
 
-    document.getElementById('donationForm').addEventListener('submit', async (e) => {
+    document.getElementById('donateForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const res = await fetch('/api/donations', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                food_item: document.getElementById('food_item').value,
-                category: document.getElementById('category').value,
-                meals_count: document.getElementById('meals_count').value,
-                expiry_time: document.getElementById('expiry_time').value,
-                location: document.getElementById('location').value
+                food_item: document.getElementById('dFood').value,
+                category: document.getElementById('dCat').value,
+                meals_count: document.getElementById('dMeals').value,
+                expiry_hours: document.getElementById('dHours').value,
+                location: document.getElementById('dLoc').value
             })
         });
-        if (res.ok) {
-            e.target.reset();
-            loadData();
-        }
+        const data = await res.json();
+        if (res.ok) { e.target.reset(); closeModal('donateModal'); showToast(data.message); loadDashboard(); }
     });
 
-    async function updateStatus(id, status) {
-        await fetch(`/api/donations/${id}/status`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status })
+    async function claimFood(id) {
+        const res = await fetch(`/api/donations/${id}/claim`, { method: 'POST' });
+        const data = await res.json();
+        showToast(data.message || data.error);
+        loadDashboard();
+    }
+
+    async function verifyOtp(id) {
+        const otp = prompt("Enter the 4-digit Pickup OTP provided by the NGO Volunteer:");
+        if (!otp) return;
+        const res = await fetch(`/api/donations/${id}/deliver`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ otp })
         });
-        loadData();
+        const data = await res.json();
+        showToast(data.message || data.error);
+        loadDashboard();
     }
 
-    async function deleteItem(id) {
-        await fetch(`/api/donations/${id}`, { method: 'DELETE' });
-        loadData();
-    }
-
-    checkAuth();
+    syncUser();
 </script>
-
 </body>
 </html>
