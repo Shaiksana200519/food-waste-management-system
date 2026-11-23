@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodShare Pro | Shaik Sana</title>
+    <style>
+        :root { --primary: #1b5e20; --accent: #2e7d32; --bg: #f0f4f3; --card: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; color: #333; }
+        header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        header h2 { margin: 0; font-size: 22px; }
+        .container { max-width: 1150px; margin: 25px auto; padding: 0 15px; }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-box { background: var(--card); padding: 20px; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.06); border-left: 5px solid var(--accent); }
+        .stat-box h3 { margin: 0; font-size: 28px; color: var(--primary); }
+        .stat-box p { margin: 5px 0 0; color: #666; font-size: 14px; }
+
+        /* Cards & Forms */
+        .card { background: var(--card); padding: 22px; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.06); margin-bottom: 25px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; width: 100%; box-sizing: border-box; font-size: 14px; }
+        button { background: var(--accent); color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        button:hover { background: var(--primary); }
+        .btn-warn { background: #ef6c00; }
+        .btn-done { background: #0277bd; }
+        .btn-del { background: #c62828; padding: 6px 10px; font-size: 12px; }
+        .btn-outline { background: transparent; border: 1px solid white; }
+
+        /* Table & Badges */
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #e8f5e9; color: #1b5e20; }
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .Available { background: #e8f5e9; color: #2e7d32; }
+        .Claimed { background: #fff3e0; color: #ef6c00; }
+        .Delivered { background: #e1f5fe; color: #0277bd; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div>
+        <h2>Food Waste Management System</h2>
+        <small>Developed by Shaik Sana</small>
+    </div>
+    <div id="userBar">
+        <span id="welcomeText">Guest Mode (Login to Donate or Claim)</span>
+        <button id="logoutBtn" class="btn-outline hidden" onclick="logout()">Logout</button>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- Live Analytics -->
+    <div class="stats-grid">
+        <div class="stat-box"><h3 id="statMeals">0</h3><p>Total Meals Saved</p></div>
+        <div class="stat-box"><h3 id="statTotal">0</h3><p>Total Food Donations</p></div>
+        <div class="stat-box"><h3 id="statAvail">0</h3><p>Available for Pickup</p></div>
+        <div class="stat-box"><h3 id="statRescued">0</h3><p>Claimed / Delivered</p></div>
+    </div>
+
+    <!-- Auth Section (Shown when logged out) -->
+    <div id="authSection" class="grid-2">
+        <div class="card">
+            <h3>Login</h3>
+            <form id="loginForm">
+                <input type="email" id="loginEmail" placeholder="Email Address" required><br><br>
+                <input type="password" id="loginPass" placeholder="Password" required><br><br>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+        <div class="card">
+            <h3>Register New Account</h3>
+            <form id="regForm">
+                <div class="form-grid">
+                    <input type="text" id="regName" placeholder="Full Name / Organization" required>
+                    <input type="email" id="regEmail" placeholder="Email Address" required>
+                    <input type="text" id="regPhone" placeholder="Phone Number" required>
+                    <select id="regRole">
+                        <option value="Donor">Food Donor (Restaurant / Event)</option>
+                        <option value="NGO">NGO / Delivery Volunteer</option>
+                    </select>
+                    <input type="password" id="regPass" placeholder="Create Password" required>
+                </div><br>
+                <button type="submit">Create Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Donor Form (Shown only to logged-in Donors) -->
+    <div id="donorSection" class="card hidden">
+        <h3>Post Surplus Food Donation</h3>
+        <form id="donationForm">
+            <div class="form-grid">
+                <input type="text" id="food_item" placeholder="Food Description (e.g., Veg Biryani)" required>
+                <select id="category">
+                    <option value="Vegetarian">Vegetarian</option>
+                    <option value="Non-Vegetarian">Non-Vegetarian</option>
+                    <option value="Bakery / Packaged">Bakery / Packaged</option>
+                </select>
+                <input type="number" id="meals_count" placeholder="Approx. Number of Meals (e.g., 25)" min="1" required>
+                <input type="text" id="expiry_time" placeholder="Best Before (e.g., Today 10:00 PM)" required>
+                <input type="text" id="location" placeholder="Full Pickup Address & City" required>
+            </div><br>
+            <button type="submit">Publish Donation</button>
+        </form>
+    </div>
+
+    <!-- Food Listings Table -->
+    <div class="card">
+        <h3>Live Food Rescue Feed</h3>
+        <div class="filter-bar">
+            <input type="text" id="searchInput" placeholder="Search by food, donor, or city..." onkeyup="renderTable()">
+            <select id="statusFilter" onchange="renderTable()" style="max-width: 200px;">
+                <option value="ALL">All Statuses</option>
+                <option value="Available">Available Only</option>
+                <option value="Claimed">Claimed Only</option>
+                <option value="Delivered">Delivered Only</option>
+            </select>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Donor & Contact</th>
+                        <th>Food & Category</th>
+                        <th>Meals</th>
+                        <th>Best Before</th>
+                        <th>Pickup Location</th>
+                        <th>Status / Claimed By</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="donationTable"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentUser = null;
+    let allDonations = [];
+
+    async function checkAuth() {
+        const res = await fetch('/api/me');
+        const data = await res.json();
+        currentUser = data.user;
+
+        if (currentUser) {
+            document.getElementById('welcomeText').innerText = `Logged in as: ${currentUser.name} (${currentUser.role})`;
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            document.getElementById('authSection').classList.add('hidden');
+            if (currentUser.role === 'Donor') {
+                document.getElementById('donorSection').classList.remove('hidden');
+            } else {
+                document.getElementById('donorSection').classList.add('hidden');
+            }
+        } else {
+            document.getElementById('welcomeText').innerText = 'Guest Mode (Login to Donate or Claim)';
+            document.getElementById('logoutBtn').classList.add('hidden');
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('donorSection').classList.add('hidden');
+        }
+        loadData();
+    }
+
+    async function loadData() {
+        const res = await fetch('/api/donations');
+        const data = await res.json();
+        allDonations = data.donations;
+
+        document.getElementById('statMeals').innerText = data.stats.total_meals;
+        document.getElementById('statTotal').innerText = data.stats.total_listings;
+        document.getElementById('statAvail').innerText = data.stats.available;
+        document.getElementById('statRescued').innerText = data.stats.rescued;
+
+        renderTable();
+    }
+
+    function renderTable() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value;
+        const tbody = document.getElementById('donationTable');
+        tbody.innerHTML = '';
+
+        const filtered = allDonations.filter(d => {
+            const matchesText = d.food_item.toLowerCase().includes(search) ||
+                                d.location.toLowerCase().includes(search) ||
+                                d.donor_name.toLowerCase().includes(search);
+            const matchesStatus = statusFilter === 'ALL' || d.status === statusFilter;
+            return matchesText && matchesStatus;
+        });
+
+        filtered.forEach(item => {
+            let actionBtn = '-';
+            if (currentUser) {
+                if (currentUser.role === 'NGO' && item.status === 'Available') {
+                    actionBtn = `<button class="btn-warn" onclick="updateStatus(${item.id}, 'Claimed')">Claim Pickup</button>`;
+                } else if (currentUser.role === 'NGO' && item.status === 'Claimed') {
+                    actionBtn = `<button class="btn-done" onclick="updateStatus(${item.id}, 'Delivered')">Mark Delivered</button>`;
+                } else if (currentUser.role === 'Donor' && item.donor_id === currentUser.id) {
+                    actionBtn = `<button class="btn-del" onclick="deleteItem(${item.id})">Delete</button>`;
+                }
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${item.donor_name}</strong><br><small>${item.phone}</small></td>
+                    <td>${item.food_item}<br><small>${item.category}</small></td>
+                    <td><strong>${item.meals_count}</strong></td>
+                    <td>${item.expiry_time}</td>
+                    <td>${item.location}</td>
+                    <td>
+                        <span class="badge ${item.status}">${item.status}</span>
+                        ${item.claimed_by !== '-' ? `<br><small>By: ${item.claimed_by}</small>` : ''}
+                    </td>
+                    <td>${actionBtn}</td>
+                </tr>
+            `;
+        });
+    }
+
+    // Event Listeners
+    document.getElementById('regForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: document.getElementById('regName').value,
+                email: document.getElementById('regEmail').value,
+                phone: document.getElementById('regPhone').value,
+                role: document.getElementById('regRole').value,
+                password: document.getElementById('regPass').value
+            })
+        });
+        const data = await res.json();
+        alert(data.message || data.error);
+        if (res.ok) e.target.reset();
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: document.getElementById('loginEmail').value,
+                password: document.getElementById('loginPass').value
+            })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            e.target.reset();
+            checkAuth();
+        } else {
+            alert(data.error);
+        }
+    });
+
+    async function logout() {
+        await fetch('/api/logout', { method: 'POST' });
+        checkAuth();
+    }
+
+    document.getElementById('donationForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const res = await fetch('/api/donations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                food_item: document.getElementById('food_item').value,
+                category: document.getElementById('category').value,
+                meals_count: document.getElementById('meals_count').value,
+                expiry_time: document.getElementById('expiry_time').value,
+                location: document.getElementById('location').value
+            })
+        });
+        if (res.ok) {
+            e.target.reset();
+            loadData();
+        }
+    });
+
+    async function updateStatus(id, status) {
+        await fetch(`/api/donations/${id}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        loadData();
+    }
+
+    async function deleteItem(id) {
+        await fetch(`/api/donations/${id}`, { method: 'DELETE' });
+        loadData();
+    }
+
+    checkAuth();
+</script>
+
+</body>
+</html>
